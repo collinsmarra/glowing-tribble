@@ -30,10 +30,15 @@ class Users(db.Model):
 
     def unlike_post(self, post):
         if self.has_liked_post(post):
-            PostLike.select().filter_by(
-                user_id=self.id,
-                post_id=post.id).delete()
-
+            with db.begin() as session:
+                like = session.scalar(
+                    PostLike.select().filter_by(
+                        user_id=self.id, post_id=post.id
+                    )
+                )
+                session.delete(like)
+                session.commit()
+                
     def has_liked_post(self, post):
         qry = sqla.select([sqla.func.count()]).select_from(
             PostLike).where(PostLike.user_id==self.id,
